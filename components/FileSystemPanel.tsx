@@ -27,7 +27,7 @@ export interface FileEntry {
 declare global {
   interface Window {
     initFileSystemAccess?: () => Promise<void>;
-    listDirectory?: (path?: string) => Promise<FileEntry[]>;
+    listDirectory?: (path?: string) => Promise<any[]>; // 🔥 unified type
     readFile?: (path: string) => Promise<string>;
     writeFile?: (path: string, content: string) => Promise<void>;
     createDirectory?: (path: string) => Promise<void>;
@@ -39,10 +39,10 @@ declare global {
     onFSChange?: () => void;
     onOpenFile?: (path: string, content?: string) => void;
 
-    // set by your fs_bridge
-    __FS_ROOT_NAME__?: string;
+    __FS_ROOT_NAME__?: string; // this is fine → keep it
   }
 }
+
 
 const FILE_TEMPLATES: Record<string, string> = {
   c: "#include <stdio.h>\n\nint main(){ printf(\"Hello, C\\n\"); return 0; }\n",
