@@ -382,7 +382,7 @@ if (["mv", "move-item"].includes(main)) {
 
       model.pushEditOperations([], [{
         range: new monaco.Range(insertAt, 1, insertAt, 1),
-        text: `${lang === "python" ? "#" : "//"} ⏳ Generating...\n`
+        text: `${lang === "python" ? "#" : "//"}  Generating...\n`
       }], null);
 
       try {
