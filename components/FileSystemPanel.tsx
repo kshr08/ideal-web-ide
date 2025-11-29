@@ -45,6 +45,7 @@ export default function FileSystemPanel() {
   useEffect(() => {
     const scr = document.createElement("script");
     scr.src = "/fs/fs_bridge.js";
+    scr.type = "module";
     scr.async = true;
     scr.onload = () => {
       console.log("fs_bridge loaded");

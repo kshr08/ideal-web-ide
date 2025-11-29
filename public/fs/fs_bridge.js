@@ -2,6 +2,16 @@
 // ====================================================================
 // File System Access Bridge – runs ONLY in browser
 // ====================================================================
+// public/fs/fs_bridge.js
+// ====================================================================
+// File System Access Bridge – runs ONLY in browser
+// ====================================================================
+
+import { dbWrite, dbRead, dbList, dbDelete } from "./db.js";
+
+let useIndexedDB = true;  // default mode (no permissions yet)
+
+
 
 if (typeof window !== "undefined") {
 
@@ -42,77 +52,182 @@ if (typeof window !== "undefined") {
     return dir;
   }
 
+    // ====================================================================
+  // Sync all IndexedDB "virtual" files into the real filesystem
+  // Called once when user chooses a folder
+  // ====================================================================
+  async function syncDBToRealFS() {
+    try {
+      // Get all DB entries
+      const entries = await dbList("");  // we treat this as "everything"
+
+      for (const entry of entries) {
+        // dbList may return either strings or { path: string, ... }
+        const path = typeof entry === "string" ? entry : entry.path;
+        if (!path) continue;
+
+        const content = await dbRead(path);
+        if (content == null) continue;
+
+        // Write into real FS using same structure
+        const { dir, name } = splitParent(path);
+        const d = await getDirectoryHandleForPath(dir, true);
+        const fh = await d.getFileHandle(name, { create: true });
+        const w = await fh.createWritable();
+        await w.write(content);
+        await w.close();
+      }
+
+      console.log("✅ Synced IndexedDB project into local folder");
+    } catch (e) {
+      console.error("❌ DB → FS sync failed:", e);
+    }
+  }
+
+
   // ====================================================================
   // Open folder
   // ====================================================================
+  // ====================================================================
+  // Open folder + sync any existing DB project into that folder
+  // ====================================================================
   window.initFileSystemAccess = async function () {
+    // Let user pick a real folder
     rootHandle = await window.showDirectoryPicker();
     currentDirHandle = rootHandle;
-    window.__FS_ROOT_NAME__ = rootHandle?.name || "root";
+    useIndexedDB = false; // SWITCH TO REAL FILE SYSTEM
+
+    window.__FS_ROOT_NAME__ = rootHandle.name;
+
+    // 🔥 Auto-restore: copy IndexedDB project into chosen folder
+    await syncDBToRealFS();
+
+    // Now refresh tree so UI shows real files from disk
     triggerRefresh();
   };
+
 
   // ====================================================================
   // List directory
   // ====================================================================
-  window.listDirectory = async function (path = "") {
-    if (!currentDirHandle) return [];
+  // -----------------------------------------------------------------------------
+// Directory Listing → Supports Native FS + IndexedDB fallback
+// -----------------------------------------------------------------------------
+window.listDirectory = async function (path = "") {
+
+  // 🟢 1) If no real filesystem is available → use IndexedDB instead
+  if (!currentDirHandle) {
     try {
-      const dir = await getDirectoryHandleForPath(path);
-      const items = [];
-
-      for await (const entry of dir.values()) {
-        items.push({
-          name: entry.name,
-          type: entry.kind === "directory" ? "dir" : "file",
-          path: (path ? clean(path) + "/" : "") + entry.name,
-        });
-      }
-
-      items.sort((a, b) => {
-        if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
-        return a.name.localeCompare(b.name);
-      });
-
-      return items;
-    } catch {
+      const list = await dbList(path);   // ⬅ IndexedDB fallback listing
+      return list || [];
+    } catch (e) {
+      console.error("IndexedDB list failed:", e);
       return [];
     }
-  };
+  }
+
+  // 🟢 2) Native File System Access API (Original logic - UNTOUCHED)
+  try {
+    const dir = await getDirectoryHandleForPath(path);
+    const items = [];
+
+    for await (const entry of dir.values()) {
+      items.push({
+        name: entry.name,
+        type: entry.kind === "directory" ? "dir" : "file",
+        path: (path ? clean(path) + "/" : "") + entry.name,
+      });
+    }
+
+    items.sort((a, b) => {
+      if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return items;
+  } catch (e) {
+    console.error("FS listDirectory failed:", e);
+    return [];
+  }
+};
+
 
   // ====================================================================
   // Read file
   // ====================================================================
-  window.readFile = async function (path) {
-    const { dir, name } = splitParent(path);
-    const d = await getDirectoryHandleForPath(dir);
-    const fh = await d.getFileHandle(name);
-    const file = await fh.getFile();
-    return file.text();
-  };
+  // -----------------------------------------------------------------------------
+// Read File → Supports BOTH Local FS + IndexedDB fallback
+// -----------------------------------------------------------------------------
+window.readFile = async function (path) {
+
+  // 🟢 1) If no native filesystem exists → Read from IndexedDB instead
+  if (!currentDirHandle) {
+    try {
+      const data = await dbRead(path);  // 🔥 fallback
+      return data ?? "";  // return empty string if missing
+    } catch (e) {
+      console.error("IndexedDB read failed:", e);
+      alert("⚠ Failed to read file from DB");
+      return "";
+    }
+  }
+
+  // 🟢 2) Normal File System Access API (Your original logic — untouched)
+  const { dir, name } = splitParent(path);
+  const d = await getDirectoryHandleForPath(dir);
+  const fh = await d.getFileHandle(name);
+  const file = await fh.getFile();
+  return file.text();
+};
+
 
   // ====================================================================
   // Write file
   // ====================================================================
-  window.writeFile = async function (path, content) {
-    const { dir, name } = splitParent(path);
-    const d = await getDirectoryHandleForPath(dir, true);
+// -----------------------------------------------------------------------------
+// Write File → Supports BOTH Local FS + IndexedDB fallback
+// -----------------------------------------------------------------------------
+window.writeFile = async function (path, content) {
 
-    let prev = null;
+  // 🟢 1) If user HAS NOT opened a real folder → Store in IndexedDB instead
+  if (!currentDirHandle) {
     try {
-      const old = await d.getFileHandle(name);
-      prev = await (await old.getFile()).text();
-    } catch {}
+      // IndexedDB write (fallback mode)
+      await dbWrite(path, content);
 
-    const fh = await d.getFileHandle(name, { create: true });
-    const writable = await fh.createWritable();
-    await writable.write(content);
-    await writable.close();
+      undoStack.push({ op: "write", path, prev: null, next: content });
+      redoStack.length = 0;
 
-    undoStack.push({ op: "write", path, prev, next: content });
-    redoStack.length = 0;
-    triggerRefresh();
-  };
+      triggerRefresh();
+      return;
+    } catch (e) {
+      console.error("IndexedDB write failed:", e);
+      alert("⚠ Failed to write file in DB");
+      return;
+    }
+  }
+
+  // 🟢 2) Normal File System Access API (your original logic preserved)
+  const { dir, name } = splitParent(path);
+  const d = await getDirectoryHandleForPath(dir, true);
+
+  let prev = null;
+  try {
+    const old = await d.getFileHandle(name);
+    prev = await (await old.getFile()).text();   // previous content for undo
+  } catch {}
+
+  const fh = await d.getFileHandle(name, { create: true });
+  const writable = await fh.createWritable();
+  await writable.write(content);
+  await writable.close();
+
+  undoStack.push({ op: "write", path, prev, next: content });
+  redoStack.length = 0;
+
+  triggerRefresh();
+};
+
 
   // ====================================================================
   // Create directory
