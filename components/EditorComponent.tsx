@@ -20,7 +20,6 @@ import FileSystemPanel from "./FileSystemPanel";
 declare global {
   interface Window {
     initFileSystemAccess?: () => Promise<void>;
-    listDirectory?: (path?: string) => Promise<any[]>;
     readFile?: (path: string) => Promise<string>;
     writeFile?: (path: string, content: string) => Promise<void>;
     createDirectory?: (path: string) => Promise<void>;
