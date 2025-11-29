@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 IDEAL — Intelligent Development Environment with AI Lead  
+**AI-Integrated Web IDE · Multi-Language Execution · Native FS + Cloud Execution · DB-Synced Projects**
 
-## Getting Started
+IDEAL (**Intelligent Development Environment with AI Lead**) is a modern browser-based IDE designed to be lightweight, intelligent and fully extensible.  
+It integrates **Code-Llama-2 LLM** for AI-assisted coding and supports execution of C, C++, Python, JavaScript and more through the **Piston API** runtime.  
+The IDE includes a filesystem with **real local disk integration (FSAA)** + **IndexedDB fallback**, allowing users to code even without folder permissions.
 
-First, run the development server:
+🔗 Live Deployment → **https://ideal-web-ide.vercel.app/**
+
+---
+
+## ✨ Core Features
+
+| Feature | Status | Powered By |
+|---|---|---|
+| AI-assisted code generation via comments | ✅ | CodeLlama-2 |
+| Multi-language run support | ✅ | Piston API |
+| Browser terminal execution | ✅ | Xterm.js |
+| Local Filesystem access | ✅ | File System Access API |
+| Offline mode (IndexedDB sync) | 🟡 experimental | Custom DB layer |
+| Undo/Redo FS operations | 🔥 | Inbuilt FS layer |
+| Breakpoint markers in editor | 🟢 | Monaco Editor |
+
+---
+
+## 🏗 Tech Stack
+
+| Layer | Tools Used |
+|---|---|
+| Frontend UI | Next.js 16 + React 19 + TypeScript |
+| Editor | Monaco Editor |
+| Terminal | Xterm.js |
+| Execution Backend | Piston API |
+| AI Code Generation | CodeLlama-2 |
+| Storage | IndexedDB + FS Access API |
+| Styling | TailwindCSS |
+
+---
+
+## 📂 Repository Structure
 
 ```bash
+.
+├── app/                  # Next.js App Router
+├── components/           # UI + Editor + FS + Terminal
+├── actions/compile.ts    # Piston API execution handler
+├── config/config.ts      # Language execution config (EXTEND HERE)
+├── public/fs/            # FS + IndexedDB DB layer (db.js / fs_bridge.js)
+├── types/global.d.ts     # Extended window bindings
+├── README.md             # ← You are reading this
+└── ...
+
+🛠 Developer Manual
+1️⃣ Clone & install dependencies
+git clone <your_repo_url>
+cd my-app
+npm install
+
+2️⃣ Run development mode
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open ↗ http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3️⃣ How The Filesystem Works
+Mode	Behavior
+Folder not selected	Uses IndexedDB (auto-save project)
+Folder selected	Real Native FS read/write
+On permission grant	DB → FS sync allowed
 
-## Learn More
+Core logic → public/fs/fs_bridge.js
+IndexedDB store → public/fs/db.js
 
-To learn more about Next.js, take a look at the following resources:
+4️⃣ Adding New Programming Languages
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+📍 Edit → config/config.ts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Example:
 
-## Deploy on Vercel
+export const LANGUAGES = {
+  cpp: { runtime: "gcc", compile: "g++", ext: "cpp" },
+  java: { runtime: "java", compile: "javac", ext: "java" },
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+  rust: {
+    compile: "rustc",
+    run: "./main",
+    ext: "rs"
+  }
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+After adding → Language automatically appears in SelectLanguages.tsx.
+
+📡 Terminal + Execution
+File	What it handles
+components/Terminal.tsx	Xterm.js shell output
+actions/compile.ts	Sends code to Piston API
+EditorComponent.tsx	Run triggers + logs
+
+Multiple run-inputs supported.
+
+📦 Deployment
+Deploy on Vercel
+npm run build
+vercel deploy
+
+Deploy on Netlify (SSR mode)
+
+netlify.toml
+
+[build]
+base = "my-app"
+command = "npm run build"
+publish = ".netlify/build"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+
+🔥 Future Upgrades
+Feature	Priority
+Cloud sync (Supabase/GitHub)	HIGH
+Debugger + Step Execution	HIGH
+Live interview mode	MEDIUM
+Plugin marketplace	LOW
