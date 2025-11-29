@@ -1,7 +1,7 @@
 declare global {
   interface Window {
     initFileSystemAccess?: () => Promise<void>;
-    listDirectory?: (path?: string) => Promise<any[]>;   // unified type
+    listDirectory?: (path?: string) => Promise<FileEntry[]>;  // <-- correct type
     readFile?: (path: string) => Promise<string>;
     writeFile?: (path: string, content: string) => Promise<void>;
     createDirectory?: (path: string) => Promise<void>;
@@ -12,7 +12,7 @@ declare global {
     fsRedo?: () => Promise<boolean>;
     onFSChange?: () => void;
     onOpenFile?: (path: string, content?: string) => void;
+    __FS_ROOT_NAME__?: string;
   }
 }
-
 export {};

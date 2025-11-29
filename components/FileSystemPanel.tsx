@@ -27,7 +27,7 @@ export interface FileEntry {
 declare global {
   interface Window {
     initFileSystemAccess?: () => Promise<void>;
-    listDirectory?: (path?: string) => Promise<any[]>; // 🔥 unified type
+    listDirectory?: (path?: string) => Promise<FileEntry[]>;
     readFile?: (path: string) => Promise<string>;
     writeFile?: (path: string, content: string) => Promise<void>;
     createDirectory?: (path: string) => Promise<void>;
