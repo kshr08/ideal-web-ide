@@ -3,7 +3,7 @@ export {};
 declare global {
   interface Window {
     initFileSystemAccess?: () => Promise<void>;
-    listDirectory?: (path?: string) => Promise<FileEntry[]>;   // <-- single source of truth
+    listDirectory?: (path?: string) => Promise<any[] | FileEntry[]>; // FIXED ✔
     readFile?: (path: string) => Promise<string>;
     writeFile?: (path: string, content: string) => Promise<void>;
     createDirectory?: (path: string) => Promise<void>;
@@ -17,4 +17,12 @@ declare global {
 
     __FS_ROOT_NAME__?: string;
   }
+}
+
+export interface FileEntry {
+  name: string;
+  type: "file" | "dir";
+  path: string;
+  children?: FileEntry[];
+  expanded?: boolean;
 }
