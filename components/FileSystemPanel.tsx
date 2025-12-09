@@ -420,12 +420,12 @@ window.onOpenFile = async (path?: string, content?: string) => {
           className="ml-2 bg-transparent border border-gray-600 rounded px-2 py-1 text-xs text-gray-300"
         />
 
-        <span className="ml-auto text-xs text-gray-400">{status}</span>
+        
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 bg-white dark:bg-slate-900">
         {!tree && <div className="text-gray-500 text-sm">Click <b>Open</b> to choose a folder.</div>}
-        {tree?.children && tree.children.length === 0 && <div className="text-gray-500 text-sm">Folder empty.</div>}
+        {tree?.children && tree.children.length === 0 && <div className="text-gray-500 text-sm">Open a folder</div>}
         {tree?.children?.map((child) => renderNode(child))}
       </div>
 

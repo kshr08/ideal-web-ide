@@ -712,7 +712,7 @@ function prompt(msg) {
                     </Button>
                   </div>
 
-                  <div className="h-[calc(100%-40px)] w-full p-2 bg-black text-white rounded-md">
+                  <div className="h-[calc(100%-40px)] w-full p-2 bg-black text-white rounded-md bg-slate-300 dark:bg-slate-900">
                     <TerminalComponent ref={terminalRef} output={""} />
                   </div>
                 </div>

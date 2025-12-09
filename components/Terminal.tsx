@@ -157,7 +157,7 @@ const TerminalComponent = forwardRef<TerminalHandle, TerminalProps>(({ output },
   return (
     <div
       ref={containerRef}
-      className="w-full h-full bg-black rounded-md overflow-hidden text-white"
+      className="w-full h-full bg-black rounded-md overflow-hidden text-white bg-white dark:bg-slate-900"
     />
   );
 });
